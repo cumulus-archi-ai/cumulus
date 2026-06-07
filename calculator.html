@@ -442,12 +442,13 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 #validation:empty{display:none}
 .valid-panel{border-radius:var(--radius);padding:14px 16px;margin-bottom:18px;font-size:12px;line-height:1.5}
 .valid-panel.err{background:rgba(242,115,141,.09);border:1px solid rgba(242,115,141,.42)}
-.valid-panel.warnp{background:rgba(245,177,76,.08);border:1px solid rgba(245,177,76,.38)}
+.valid-panel.warnp{background:var(--amber);border:1px solid #9a6a26}
 .valid-panel+.valid-panel{margin-top:-8px}
 .valid-panel .vh{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-weight:600}
 .valid-panel.err .vh{color:var(--rose)}
-.valid-panel.warnp .vh{color:var(--amber)}
+.valid-panel.warnp .vh{color:#fff}
 .vitem{display:flex;gap:8px;padding:3px 0;color:var(--ink-2)}
+.valid-panel.warnp .vitem{color:#fff}
 .vitem::before{content:"›";color:inherit;font-weight:700}
 input.invalid,select.invalid{border-color:var(--rose) !important;box-shadow:0 0 0 3px rgba(242,115,141,.14)}
 input.flag,select.flag{border-color:var(--amber) !important}
@@ -3980,6 +3981,28 @@ const _eb=document.getElementById('execBtn'); if(_eb) _eb.addEventListener('clic
     }
     function aiTitle(host){ const h=host.querySelector('h2,h3,h4'); let s=''; if(h){ const c=h.cloneNode(true); c.querySelectorAll('.help,.story-help,i,button').forEach(x=>x.remove()); s=c.textContent; } s=(s||host.getAttribute('data-ai')||'AI').replace(/\s+/g,' ').replace(/\bAdd\b/gi,'').replace(/\?/g,'').replace(/^\s*[A-Za-z]\s+/,'').trim(); return s||'AI capability'; }
     const colhdr=()=>({c:[{v:'Field',s:'colhead'},{v:'Value',s:'colhead'},{v:'Unit',s:'colhead'}]});
+    function rateCardSheet(){
+      const el=document.getElementById('rateTable'); if(!el) return null;
+      const cats=el.querySelectorAll('.rcat'); if(!cats.length) return null;
+      const rows=[{c:[{v:'Flat unit rates — full card (USD)',s:'title'}],h:24,merge:true}];
+      cats.forEach(cat=>{
+        const hEl=cat.querySelector('.rcat-h'); let cl='';
+        if(hEl){ const c=hEl.cloneNode(true); c.querySelectorAll('.sw,i,button').forEach(x=>x.remove()); cl=c.textContent.replace(/\s+/g,' ').trim(); }
+        rows.push({c:[{v:cl||'Rates',s:'subhead'}],h:19,merge:true});
+        rows.push({c:[{v:'Rate',s:'colhead'},{v:'Unit',s:'colhead'},{v:'Price (USD)',s:'colhead'}]});
+        cat.querySelectorAll('.rate-row').forEach(rr=>{
+          const rn=rr.querySelector('.rn'); let name='';
+          if(rn){ const c=rn.cloneNode(true); c.querySelectorAll('.help,i,button').forEach(x=>x.remove()); name=c.textContent.replace(/\s+/g,' ').trim(); }
+          const unit=(rr.querySelector('.ru')&&rr.querySelector('.ru').textContent.trim())||'';
+          const inp=rr.querySelector('input'); let val=inp?inp.value:((rr.querySelector('.rv')&&rr.querySelector('.rv').textContent)||'');
+          val=(val==null?'':String(val)).trim();
+          const cv=(val!=='' && /^-?\d*\.?\d+$/.test(val))?parseFloat(val):val;
+          rows.push({c:[{v:name,s:'data'},{v:unit,s:'data'},{v:cv,s:'data'}]});
+        });
+        rows.push({c:[]});
+      });
+      return {name:'Unit price set', cols:[42,24,14], rows};
+    }
     document.querySelectorAll('.inputs h2').forEach(h2=>{
       const n=h2.querySelector('.n'); if(!n) return;
       const num=(n.textContent||'').trim();
@@ -4017,6 +4040,7 @@ const _eb=document.getElementById('execBtn'); if(_eb) _eb.addEventListener('clic
       }
       sheets.push({name:(num?num+' ':'')+title, cols:COLS3, rows});
     });
+    const rc=rateCardSheet(); if(rc) sheets.push(rc);
     // cost breakdown + summary
     const m=model(), t=totalsFrom(m.prod), gross=t.monthly, comm=commercial(m,gross), net=comm.net;
     const L=m.meta.lines||{}, scn=state.scenario, scnName=scn<1?'Conservative':scn>1?'Aggressive':'Base';
